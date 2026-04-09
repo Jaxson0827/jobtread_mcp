@@ -26,15 +26,28 @@ export function assertEnvVars(): void {
 // ---------------------------------------------------------------------------
 
 /**
- * Returns true only when the request carries a non-empty x-api-key header
- * that exactly matches the MCP_API_KEY environment variable.
+ * Returns true when the request supplies the correct API key via either:
+ *   - the `x-api-key` request header, or
+ *   - the `key` query-string parameter (fallback for clients that cannot
+ *     set custom headers, e.g. Claude Desktop HTTP transport)
+ *
+ * Both are checked against MCP_API_KEY using constant-time string equality.
  */
-export function validateApiKey(req: IncomingMessage): boolean {
-  const key = req.headers['x-api-key'];
+export function validateApiKey(req: IncomingMessage & { query?: Record<string, string | string[]> }): boolean {
   const expected = process.env.MCP_API_KEY;
   // Guard: if MCP_API_KEY is somehow empty at runtime, reject everything
   if (!expected) return false;
-  return typeof key === 'string' && key.length > 0 && key === expected;
+
+  // 1. Header takes precedence
+  const headerKey = req.headers['x-api-key'];
+  if (typeof headerKey === 'string' && headerKey.length > 0 && headerKey === expected) {
+    return true;
+  }
+
+  // 2. Query-parameter fallback (?key=...)
+  const queryKey = req.query?.['key'];
+  const queryKeyStr = Array.isArray(queryKey) ? queryKey[0] : queryKey;
+  return typeof queryKeyStr === 'string' && queryKeyStr.length > 0 && queryKeyStr === expected;
 }
 
 // ---------------------------------------------------------------------------
