@@ -14,6 +14,7 @@ import { registerBudgetTools } from '../lib/tools/budgets.js';
 import { registerDocumentTools } from '../lib/tools/documents.js';
 import { registerTimeTools } from '../lib/tools/time.js';
 import { registerAccountTools } from '../lib/tools/accounts.js';
+import { registerTaskTools } from '../lib/tools/tasks.js';
 
 function buildMcpServer(): McpServer {
   const server = new McpServer({ name: 'jobtread-mcp', version: '1.0.0' });
@@ -22,6 +23,7 @@ function buildMcpServer(): McpServer {
   registerDocumentTools(server);
   registerTimeTools(server);
   registerAccountTools(server);
+  registerTaskTools(server);
   return server;
 }
 

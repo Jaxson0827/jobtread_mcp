@@ -55,6 +55,21 @@ export interface User {
   name: string;
 }
 
+export interface Task {
+  id: string;
+  name: string;
+  description: string | null;
+  /** 0.0–1.0 as stored by the API; multiply by 100 for display */
+  progress: number | null;
+  /** 1 = complete, 0 = incomplete (automatically set when progress reaches 1.0) */
+  completed: number;
+  startDate: string | null;
+  /** This is the due date */
+  endDate: string | null;
+  createdAt: string;
+  job?: { id: string; name: string };
+}
+
 export interface TimeEntry {
   id: string;
   minutes: number;
