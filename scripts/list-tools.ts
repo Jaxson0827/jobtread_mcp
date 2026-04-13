@@ -16,6 +16,7 @@ import { registerTimeTools } from '../lib/tools/time.js';
 import { registerAccountTools } from '../lib/tools/accounts.js';
 import { registerTaskTools } from '../lib/tools/tasks.js';
 import { registerCommentTools } from '../lib/tools/comments.js';
+import { registerLocationTools } from '../lib/tools/locations.js';
 // accounts module already has get_contacts, get_contact_details, create_contact
 
 function buildMcpServer(): McpServer {
@@ -27,6 +28,7 @@ function buildMcpServer(): McpServer {
   registerAccountTools(server);
   registerTaskTools(server);
   registerCommentTools(server);
+  registerLocationTools(server);
   return server;
 }
 
