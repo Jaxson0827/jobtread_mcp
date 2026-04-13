@@ -17,26 +17,49 @@ import { registerAccountTools } from '../lib/tools/accounts.js';
 import { registerTaskTools } from '../lib/tools/tasks.js';
 import { registerCommentTools } from '../lib/tools/comments.js';
 import { registerLocationTools } from '../lib/tools/locations.js';
-// jobs, budgets, time modules already have the new tools registered inline
-// accounts module already has get_contacts, get_contact_details, create_contact
+import { registerFileTools } from '../lib/tools/files.js';
+import { registerSearchTools } from '../lib/tools/search.js';
+
+const GROUPS: Array<[string, (s: McpServer) => void]> = [
+  ['jobs',      registerJobTools],
+  ['budgets',   registerBudgetTools],
+  ['documents', registerDocumentTools],
+  ['time',      registerTimeTools],
+  ['accounts',  registerAccountTools],
+  ['tasks',     registerTaskTools],
+  ['comments',  registerCommentTools],
+  ['locations', registerLocationTools],
+  ['files',     registerFileTools],
+  ['search',    registerSearchTools],
+];
 
 function buildMcpServer(): McpServer {
   const server = new McpServer({ name: 'jobtread-mcp', version: '1.0.0' });
-  registerJobTools(server);
-  registerBudgetTools(server);
-  registerDocumentTools(server);
-  registerTimeTools(server);
-  registerAccountTools(server);
-  registerTaskTools(server);
-  registerCommentTools(server);
-  registerLocationTools(server);
+  for (const [, register] of GROUPS) register(server);
   return server;
 }
 
 const server = buildMcpServer();
-// The SDK stores tools in _registeredTools (plain object keyed by tool name)
 const tools = (server as any)._registeredTools as Record<string, unknown>;
-const names = Object.keys(tools);
-console.log(`\nRegistered tools (${names.length} total):\n`);
-names.forEach((name, i) => console.log(`  ${String(i + 1).padStart(2, ' ')}. ${name}`));
-console.log('');
+
+// Print grouped by registration order
+let globalIdx = 0;
+const allNames = Object.keys(tools);
+
+console.log(`\n${'═'.repeat(55)}`);
+console.log(`  JobTread MCP — registered tools (${allNames.length} total)`);
+console.log(`${'═'.repeat(55)}\n`);
+
+// Re-build per-group to determine group membership
+for (const [groupName, register] of GROUPS) {
+  const scratch = new McpServer({ name: 'audit', version: '0' });
+  register(scratch);
+  const groupTools = Object.keys((scratch as any)._registeredTools as Record<string, unknown>);
+  console.log(`  ── ${groupName} (${groupTools.length}) ──`);
+  for (const name of groupTools) {
+    globalIdx++;
+    console.log(`    ${String(globalIdx).padStart(2, ' ')}. ${name}`);
+  }
+}
+
+console.log(`\n  Total: ${globalIdx} tools\n`);
