@@ -35,8 +35,9 @@ const EXPECTED_TOOLS = [
   'list_documents', 'create_document',
   // time (4)
   'log_time', 'get_time_entries', 'create_daily_log', 'get_daily_logs',
-  // accounts (4)
+  // accounts (7)
   'search_accounts', 'get_account', 'create_account', 'list_users',
+  'get_contacts', 'get_contact_details', 'create_contact',
   // tasks (4)
   'get_tasks', 'get_task_details', 'create_task', 'update_task_progress',
   // comments (3)
@@ -80,7 +81,7 @@ function buildMcpServer(): McpServer {
       `[jobtread-mcp] WARNING: ${missing.length} tool(s) failed to register: ${missing.join(', ')}`
     );
   } else {
-    console.log(`[jobtread-mcp] All ${registered.length}/25 tools registered: ${registered.join(', ')}`);
+    console.log(`[jobtread-mcp] All ${registered.length}/28 tools registered: ${registered.join(', ')}`);
   }
 
   return server;

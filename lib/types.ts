@@ -9,13 +9,26 @@ export interface Location {
   country: string;
 }
 
+export interface CustomFieldValue {
+  id: string;
+  value: string;
+  customField: {
+    id: string;
+    name: string;
+    type: string;
+  };
+}
+
 export interface Contact {
   id: string;
   name: string;
   firstName: string;
   lastName: string;
   title: string | null;
+  createdAt?: string;
   locations?: { nodes: Partial<Location>[] };
+  /** Email, phone, and other org-defined fields stored as custom field values */
+  customFieldValues?: { nodes: CustomFieldValue[] };
 }
 
 export interface Account {

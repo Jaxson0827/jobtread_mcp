@@ -16,6 +16,7 @@ import { registerTimeTools } from '../lib/tools/time.js';
 import { registerAccountTools } from '../lib/tools/accounts.js';
 import { registerTaskTools } from '../lib/tools/tasks.js';
 import { registerCommentTools } from '../lib/tools/comments.js';
+// accounts module already has get_contacts, get_contact_details, create_contact
 
 function buildMcpServer(): McpServer {
   const server = new McpServer({ name: 'jobtread-mcp', version: '1.0.0' });

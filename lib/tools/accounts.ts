@@ -5,9 +5,36 @@ import {
   getAccount,
   createAccount,
   createContact,
+  getAccountContacts,
+  getContactById,
+  createContactForAccount,
+  extractCustomFieldValue,
 } from '../jobtread/accounts.js';
 import { listUsers } from '../jobtread/users.js';
 import { ok, err } from './_helpers.js';
+
+/** Map a raw contact to the clean shape returned to Claude */
+function formatContact(c: Partial<import('../types.js').Contact> & { account?: { id: string; name: string } | null }) {
+  return {
+    id: c.id,
+    name: c.name,
+    firstName: c.firstName ?? null,
+    lastName: c.lastName ?? null,
+    title: c.title ?? null,
+    email: extractCustomFieldValue(c, 'Email'),
+    phone: extractCustomFieldValue(c, 'Phone'),
+    createdAt: c.createdAt ?? null,
+    locations:
+      c.locations?.nodes?.map((l) => ({
+        id: l.id,
+        formattedAddress: l.formattedAddress ?? l.address ?? null,
+        city: l.city ?? null,
+        state: l.state ?? null,
+        postalCode: l.postalCode ?? null,
+      })) ?? [],
+    account: c.account ? { id: c.account.id, name: c.account.name } : undefined,
+  };
+}
 
 export function registerAccountTools(server: McpServer): void {
   server.registerTool(
@@ -171,6 +198,100 @@ export function registerAccountTools(server: McpServer): void {
         });
       } catch (e) {
         return err(`Failed to list users: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // ── get_contacts ───────────────────────────────────────────────────────────
+  server.registerTool(
+    'get_contacts',
+    {
+      description:
+        'Get all contacts associated with an account, including name, title, email, and phone. ' +
+        'NOTE: Email and phone are stored as org-defined custom fields in JobTread — ' +
+        'they are extracted and presented as top-level fields for convenience. ' +
+        'Address/location details are not included in the list — use get_contact_details for full address info. ' +
+        'Use get_account or search_accounts to find the account_id first.',
+      inputSchema: {
+        account_id: z.string().describe('The JobTread account ID'),
+      },
+    },
+    async ({ account_id }) => {
+      try {
+        const contacts = await getAccountContacts(account_id);
+        return ok({
+          account_id,
+          total: contacts.length,
+          contacts: contacts.map(formatContact),
+        });
+      } catch (e) {
+        return err(`Failed to get contacts: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // ── get_contact_details ────────────────────────────────────────────────────
+  server.registerTool(
+    'get_contact_details',
+    {
+      description:
+        'Get full details for a single contact by their ID, including name, title, email, phone, ' +
+        'all associated addresses, and the account they belong to. ' +
+        'Use get_contacts to list contacts for an account and find a contact ID.',
+      inputSchema: {
+        contact_id: z.string().describe('The JobTread contact ID'),
+      },
+    },
+    async ({ contact_id }) => {
+      try {
+        const contact = await getContactById(contact_id);
+        if (!contact.id) return err(`Contact not found: ${contact_id}`);
+        return ok(formatContact(contact));
+      } catch (e) {
+        return err(`Failed to get contact details: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // ── create_contact ─────────────────────────────────────────────────────────
+  server.registerTool(
+    'create_contact',
+    {
+      description:
+        'Add a new contact to an existing account. ' +
+        'Supports name, title, email, and phone. ' +
+        'Email and phone are stored as org-defined custom fields, not top-level fields — ' +
+        'they will be visible in the JobTread web interface under the contact\'s custom fields section. ' +
+        'The "lead_source" field is required by this JobTread organization — valid options are: ' +
+        '"Referral", "Website", "Friend", "Internet Search", "Social Media". Defaults to "Referral" if omitted.',
+      inputSchema: {
+        account_id: z.string().describe('The JobTread account ID to add the contact to'),
+        name: z.string().min(1).describe('Full name of the contact (e.g. "Jane Smith")'),
+        title: z.string().optional().describe('Job title or role (e.g. "Project Manager")'),
+        email: z.string().email().optional().describe('Contact email address'),
+        phone: z.string().optional().describe('Contact phone number'),
+        lead_source: z
+          .enum(['Referral', 'Website', 'Friend', 'Internet Search', 'Social Media'])
+          .optional()
+          .describe(
+            'How this contact was sourced. Required by this org. Valid values: Referral, Website, Friend, Internet Search, Social Media. Defaults to "Referral".'
+          ),
+      },
+    },
+    async ({ account_id, name, title, email, phone, lead_source }) => {
+      try {
+        const contact = await createContactForAccount({
+          accountId: account_id,
+          name,
+          title,
+          email,
+          phone,
+          leadSource: lead_source,
+        });
+        if (!contact.id) return err('Contact was not created — no ID returned');
+        return ok(formatContact(contact));
+      } catch (e) {
+        return err(`Failed to create contact: ${(e as Error).message}`);
       }
     }
   );
