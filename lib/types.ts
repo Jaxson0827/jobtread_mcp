@@ -70,6 +70,18 @@ export interface Task {
   job?: { id: string; name: string };
 }
 
+export interface Comment {
+  id: string;
+  /** Optional subject/title set by the author */
+  name: string | null;
+  /** The comment body text */
+  message: string;
+  createdAt: string;
+  /** The account associated with this comment (business name, not individual user) */
+  account?: { id: string; name: string } | null;
+  job?: { id: string; name: string } | null;
+}
+
 export interface TimeEntry {
   id: string;
   minutes: number;
