@@ -15,6 +15,7 @@ import { registerAccountTools } from '../lib/tools/accounts.js';
 import { registerTaskTools } from '../lib/tools/tasks.js';
 import { registerCommentTools } from '../lib/tools/comments.js';
 import { registerLocationTools } from '../lib/tools/locations.js';
+import { registerFileTools } from '../lib/tools/files.js';
 
 // ---------------------------------------------------------------------------
 // Startup validation — runs once at cold start, throws immediately if
@@ -48,6 +49,8 @@ const EXPECTED_TOOLS = [
   'get_comments', 'get_comment_details', 'create_comment',
   // locations (2)
   'get_locations', 'create_location',
+  // files (4)
+  'get_files', 'get_file_details', 'read_file', 'update_file',
 ] as const;
 
 function buildMcpServer(): McpServer {
@@ -66,6 +69,7 @@ function buildMcpServer(): McpServer {
     ['tasks', () => registerTaskTools(server)],
     ['comments', () => registerCommentTools(server)],
     ['locations', () => registerLocationTools(server)],
+    ['files', () => registerFileTools(server)],
   ];
 
   for (const [name, register] of groups) {
@@ -88,7 +92,7 @@ function buildMcpServer(): McpServer {
       `[jobtread-mcp] WARNING: ${missing.length} tool(s) failed to register: ${missing.join(', ')}`
     );
   } else {
-    console.log(`[jobtread-mcp] All ${registered.length}/37 tools registered: ${registered.join(', ')}`);
+    console.log(`[jobtread-mcp] All ${registered.length}/41 tools registered: ${registered.join(', ')}`);
   }
 
   return server;

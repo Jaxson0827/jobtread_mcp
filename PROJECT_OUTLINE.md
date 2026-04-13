@@ -1,4 +1,4 @@
-# JobTread MCP Server — Project Outline
+# JobTread MCP Server ï¿½ Project Outline
 
 **Version:** 1.0 | **Date:** April 09, 2026 | **Classification:** Internal / Confidential
 
@@ -45,7 +45,7 @@ Build a custom MCP server that bridges Claude AI with a company's JobTread accou
 
 ### 1.2 What Is MCP?
 
-Model Context Protocol (MCP) is an open standard introduced by Anthropic in November 2024. It defines a standardized way for AI models to connect to external tools and data sources — a universal interface that lets any MCP-compatible AI assistant connect to any MCP server. Now maintained by the Linux Foundation; supported by Claude, ChatGPT, Gemini, Cursor, VS Code, and more.
+Model Context Protocol (MCP) is an open standard introduced by Anthropic in November 2024. It defines a standardized way for AI models to connect to external tools and data sources ï¿½ a universal interface that lets any MCP-compatible AI assistant connect to any MCP server. Now maintained by the Linux Foundation; supported by Claude, ChatGPT, Gemini, Cursor, VS Code, and more.
 
 An MCP server exposes named **tools**. Each tool has a name, description (which the AI reads to decide what to use), and an input schema.
 
@@ -82,24 +82,24 @@ Claude.ai / Claude Desktop  ?  Vercel MCP Server (/api/mcp)  ?  JobTread API (ap
 | JobTread API Client | Custom TypeScript module | Constructs and executes Pave queries against JobTread |
 | Auth Layer | API key header check (Vercel middleware) | Ensures only authorized clients can invoke tools |
 | Secrets Store | Vercel Environment Variables | Stores `JOBTREAD_GRANT_KEY` and `MCP_API_KEY` securely |
-| JobTread | `api.jobtread.com/pave` | Source of truth — all construction project data |
+| JobTread | `api.jobtread.com/pave` | Source of truth ï¿½ all construction project data |
 
 ### 2.3 Transport Layer: Streamable HTTP
 
 | Transport | How It Works | Vercel Compatible? | Use Case |
 |-----------|-------------|-------------------|----------|
-| stdio | Local process, stdin/stdout | No — local only | Single-user local dev |
-| SSE | Long-lived HTTP stream | Problematic — 10s timeout | Avoid for Vercel |
-| **Streamable HTTP** | **Stateless HTTP POST** | **Yes — perfect fit** | **THIS PROJECT ?** |
+| stdio | Local process, stdin/stdout | No ï¿½ local only | Single-user local dev |
+| SSE | Long-lived HTTP stream | Problematic ï¿½ 10s timeout | Avoid for Vercel |
+| **Streamable HTTP** | **Stateless HTTP POST** | **Yes ï¿½ perfect fit** | **THIS PROJECT ?** |
 
 ### 2.4 Why Vercel
 
-- Zero server management — deploy from GitHub
+- Zero server management ï¿½ deploy from GitHub
 - Free tier sufficient for internal team usage
 - Built-in env var management for secrets
 - Excellent TypeScript/Node.js support
 - Custom domain support (e.g., `mcp.yourcompany.com`)
-- 10–60 second function timeout
+- 10ï¿½60 second function timeout
 - Vercel CLI for local development that mirrors production
 
 ---
@@ -110,10 +110,10 @@ Claude.ai / Claude Desktop  ?  Vercel MCP Server (/api/mcp)  ?  JobTread API (ap
 
 | Technology | Version | Role |
 |------------|---------|------|
-| TypeScript | 5.x | Primary language — type-safe, excellent MCP SDK support |
+| TypeScript | 5.x | Primary language ï¿½ type-safe, excellent MCP SDK support |
 | Node.js | 20.x LTS | Runtime for Vercel serverless functions |
 | Vercel | Latest | Hosting platform for serverless deployment |
-| `@modelcontextprotocol/sdk` | Latest | Official MCP server SDK — tool registration, transport handling |
+| `@modelcontextprotocol/sdk` | Latest | Official MCP server SDK ï¿½ tool registration, transport handling |
 | zod | 3.x | Runtime schema validation for tool inputs |
 | tsx / ts-node | Latest | Local TypeScript execution for development |
 
@@ -136,12 +136,12 @@ Claude.ai / Claude Desktop  ?  Vercel MCP Server (/api/mcp)  ?  JobTread API (ap
 
 ### 3.3 Development Tools
 
-- **Vercel CLI** — run `vercel dev` locally to mirror production exactly
-- **Claude Desktop** — connect to localhost to test tool calls in real conversations
-- **JobTread Sandbox** — test against non-production data during development
-- **VS Code** — TypeScript IntelliSense, Vercel extensions available
-- **Postman or curl** — test the raw MCP HTTP endpoint directly
-- **GitHub** — source control; Vercel auto-deploys on push to `main`
+- **Vercel CLI** ï¿½ run `vercel dev` locally to mirror production exactly
+- **Claude Desktop** ï¿½ connect to localhost to test tool calls in real conversations
+- **JobTread Sandbox** ï¿½ test against non-production data during development
+- **VS Code** ï¿½ TypeScript IntelliSense, Vercel extensions available
+- **Postman or curl** ï¿½ test the raw MCP HTTP endpoint directly
+- **GitHub** ï¿½ source control; Vercel auto-deploys on push to `main`
 
 ---
 
@@ -149,7 +149,7 @@ Claude.ai / Claude Desktop  ?  Vercel MCP Server (/api/mcp)  ?  JobTread API (ap
 
 ### 4.1 Authentication (Grant Keys)
 
-JobTread uses **Grant Keys** — long-lived API tokens generated under Settings ? Grant Management. The grant key is passed **inside the request body**, not as an HTTP header.
+JobTread uses **Grant Keys** ï¿½ long-lived API tokens generated under Settings ? Grant Management. The grant key is passed **inside the request body**, not as an HTTP header.
 
 > ?? Grant keys expire after **3 months of inactivity**. Rotate every 2 months. See Section 10.4.
 
@@ -168,7 +168,7 @@ const response = await fetch("https://api.jobtread.com/pave", {
 
 ### 4.2 Pave Query Language Overview
 
-JobTread's API uses **Pave** — a proprietary query language similar to GraphQL. Single endpoint, all operations as POST requests with a JSON body.
+JobTread's API uses **Pave** ï¿½ a proprietary query language similar to GraphQL. Single endpoint, all operations as POST requests with a JSON body.
 
 **Reading data:**
 ```json
@@ -207,8 +207,8 @@ POST https://api.jobtread.com/pave
 
 | Entity | Key Fields | Notes |
 |--------|-----------|-------|
-| Organization | id, name | Your company — needed for scoping mutations |
-| Job | id, name, status, startDate, endDate, customerId, locationId | Core entity — most tools interact with jobs |
+| Organization | id, name | Your company ï¿½ needed for scoping mutations |
+| Job | id, name, status, startDate, endDate, customerId, locationId | Core entity ï¿½ most tools interact with jobs |
 | Account | id, name, type (customer/vendor), email, phone | Customers and vendors |
 | Budget | id, jobId, lineItems, totalCost, totalRevenue | Financial data per job |
 | BudgetItem | id, name, quantity, unitCost, costCode, catalogItemId | Individual line items |
@@ -224,14 +224,14 @@ POST https://api.jobtread.com/pave
 
 ### 5.1 Tool Design Principles
 
-- **Descriptions are critical** — Claude reads them to select the right tool. Be precise and unambiguous.
-- **Fail gracefully** — every tool must return a structured error message if the API fails.
-- **Return only what is needed** — extract and return only the fields Claude needs.
-- **Validate inputs** — use Zod schemas before making any API call.
+- **Descriptions are critical** ï¿½ Claude reads them to select the right tool. Be precise and unambiguous.
+- **Fail gracefully** ï¿½ every tool must return a structured error message if the API fails.
+- **Return only what is needed** ï¿½ extract and return only the fields Claude needs.
+- **Validate inputs** ï¿½ use Zod schemas before making any API call.
 - **Use snake_case** for tool names (e.g., `get_job`, not `getJob`).
-- **One tool, one responsibility** — no multi-purpose tools.
+- **One tool, one responsibility** ï¿½ no multi-purpose tools.
 
-### 5.2 Jobs — 4 Tools
+### 5.2 Jobs ï¿½ 4 Tools
 
 #### `search_jobs`
 Search and filter jobs by name, status, customer, or date range.
@@ -286,7 +286,7 @@ Update the status of an existing job.
 
 ---
 
-### 5.3 Budgets — 3 Tools
+### 5.3 Budgets ï¿½ 3 Tools
 
 #### `get_budget`
 Retrieve the full budget for a specific job including all line items.
@@ -327,7 +327,7 @@ High-level financial summary for one or more jobs (totals only, no line items).
 
 ---
 
-### 5.4 Documents — 2 Tools
+### 5.4 Documents ï¿½ 2 Tools
 
 #### `create_document`
 Generate a new document (estimate, invoice, PO, or bid request) for a job.
@@ -356,7 +356,7 @@ List all documents for a job, optionally filtered by type or status.
 
 ---
 
-### 5.5 Time & Daily Logs — 3 Tools
+### 5.5 Time & Daily Logs ï¿½ 3 Tools
 
 #### `log_time`
 Create a time entry for a specific job and user.
@@ -401,7 +401,7 @@ Create a daily log entry for a job (project diary, separate from time entries).
 
 ---
 
-### 5.6 Contacts & Accounts — 3 Tools
+### 5.6 Contacts & Accounts ï¿½ 3 Tools
 
 #### `search_accounts`
 Search for customer or vendor accounts by name, email, or phone.
@@ -492,7 +492,7 @@ jobtread-mcp/
 | `lib/auth.ts` | Validates incoming `MCP_API_KEY` header on every request. Returns 401 if missing or invalid. |
 | `lib/types.ts` | Shared TypeScript interfaces for JobTread entities. |
 | `.env.local` | Local development secrets. Never committed to git. |
-| `vercel.json` | Vercel configuration — function timeout, CORS headers, route configuration. |
+| `vercel.json` | Vercel configuration ï¿½ function timeout, CORS headers, route configuration. |
 
 ---
 
@@ -598,7 +598,7 @@ vercel dev
 1. Push code to GitHub `main` branch
 2. In Vercel dashboard, create a new project linked to the GitHub repo
 3. Add environment variables: `JOBTREAD_GRANT_KEY` and `MCP_API_KEY`
-4. Deploy — Vercel auto-builds from the GitHub push
+4. Deploy ï¿½ Vercel auto-builds from the GitHub push
 5. Test the live endpoint with curl
 6. Update team's Claude Desktop/Claude.ai config with the production URL
 7. Optionally add a custom domain in Vercel settings
@@ -612,14 +612,14 @@ vercel dev
 - Generate in JobTread under Settings ? Grant Management (shown **once**)
 - Store immediately in Vercel's environment variable dashboard
 - **Never** commit to git, Slack, email, or any chat tool
-- Grant keys expire after **3 months of inactivity** — rotate every 2 months
+- Grant keys expire after **3 months of inactivity** ï¿½ rotate every 2 months
 - If compromised: revoke immediately, generate a new one, update Vercel, redeploy
 
 ### 8.2 Endpoint Protection Options
 
 | Method | How It Works | Best For |
 |--------|-------------|----------|
-| **Shared API Key (Recommended)** | All team members include `x-api-key: YOUR_KEY` in their Claude config | Small teams — simple, zero extra setup |
+| **Shared API Key (Recommended)** | All team members include `x-api-key: YOUR_KEY` in their Claude config | Small teams ï¿½ simple, zero extra setup |
 | Vercel Password Protection | Vercel's built-in feature (Pro plan) adds HTTP basic auth | Non-technical team members |
 | Per-User Grant Keys | Each user has their own JobTread grant key in their Claude config | Maximum auditability |
 
@@ -707,17 +707,17 @@ Before deploying to production:
 
 ### 10.3 Monitoring & Logs
 
-- **Vercel dashboard** — view function invocation logs, errors, and execution times
-- **Structured logging** — `console.log` in tool handlers with job IDs and tool names
-- **Error alerting** — Vercel can integrate with Slack or email for function error alerts
-- **Usage tracking** — log which tools are called most to prioritize enhancements
+- **Vercel dashboard** ï¿½ view function invocation logs, errors, and execution times
+- **Structured logging** ï¿½ `console.log` in tool handlers with job IDs and tool names
+- **Error alerting** ï¿½ Vercel can integrate with Slack or email for function error alerts
+- **Usage tracking** ï¿½ log which tools are called most to prioritize enhancements
 
 ### 10.4 Grant Key Rotation
 
 > Set a recurring calendar reminder to rotate every **2 months**.
 
 1. Log into JobTread ? Settings ? Grant Management
-2. Create a new grant key — copy it immediately (shown once)
+2. Create a new grant key ï¿½ copy it immediately (shown once)
 3. Vercel dashboard ? Project Settings ? Environment Variables
 4. Update `JOBTREAD_GRANT_KEY` with the new value
 5. Click **Redeploy** in Vercel (no code change needed)
@@ -732,27 +732,27 @@ Before deploying to production:
 
 | Phase | Description | Deliverable |
 |-------|-------------|-------------|
-| **Phase 1 — Setup** | GitHub repo, Vercel project, TypeScript config, directory structure, env vars | Working skeleton deployed to Vercel with no tools yet |
-| **Phase 2 — API Client** | Build `lib/jobtread/` modules. Test each function against JobTread sandbox. | All JobTread API functions working and tested |
-| **Phase 3 — Core Tools** | Build tools for jobs and budgets (7 tools). Connect to Claude Desktop locally. | Claude can search jobs, view budgets, add budget items |
-| **Phase 4 — Remaining Tools** | Build document, time, and account tools (8 more tools). Full local test suite. | All 15 tools working locally |
-| **Phase 5 — Auth & Security** | Add API key middleware. Final security review. Env var audit. | Endpoint protected and production-ready |
-| **Phase 6 — Deploy & Connect** | Deploy to Vercel. Connect team members. Monitor first real usage. | Live server, entire team connected |
+| **Phase 1 ï¿½ Setup** | GitHub repo, Vercel project, TypeScript config, directory structure, env vars | Working skeleton deployed to Vercel with no tools yet |
+| **Phase 2 ï¿½ API Client** | Build `lib/jobtread/` modules. Test each function against JobTread sandbox. | All JobTread API functions working and tested |
+| **Phase 3 ï¿½ Core Tools** | Build tools for jobs and budgets (7 tools). Connect to Claude Desktop locally. | Claude can search jobs, view budgets, add budget items |
+| **Phase 4 ï¿½ Remaining Tools** | Build document, time, and account tools (8 more tools). Full local test suite. | All 15 tools working locally |
+| **Phase 5 ï¿½ Auth & Security** | Add API key middleware. Final security review. Env var audit. | Endpoint protected and production-ready |
+| **Phase 6 ï¿½ Deploy & Connect** | Deploy to Vercel. Connect team members. Monitor first real usage. | Live server, entire team connected |
 
 ### 11.2 Effort Estimates
 
 | Phase | Estimated Hours | Notes |
 |-------|----------------|-------|
-| Phase 1 — Setup | 4–6 hours | Mostly config and tooling |
-| Phase 2 — API Client | 8–12 hours | Includes exploring JobTread API docs and sandbox testing |
-| Phase 3 — Core Tools (7) | 8–12 hours | Jobs + budgets — the heaviest logic |
-| Phase 4 — Remaining Tools (8) | 8–10 hours | Follows same pattern established in Phase 3 |
-| Phase 5 — Auth & Security | 3–4 hours | Straightforward with the pattern in Section 8 |
-| Phase 6 — Deploy & Connect | 2–4 hours | Vercel deploy + team onboarding |
-| Buffer / Testing / Debugging | 8–10 hours | Always budget for unexpected API quirks |
-| **Total** | **41–58 hours** | **~1–1.5 weeks for a single focused developer** |
+| Phase 1 ï¿½ Setup | 4ï¿½6 hours | Mostly config and tooling |
+| Phase 2 ï¿½ API Client | 8ï¿½12 hours | Includes exploring JobTread API docs and sandbox testing |
+| Phase 3 ï¿½ Core Tools (7) | 8ï¿½12 hours | Jobs + budgets ï¿½ the heaviest logic |
+| Phase 4 ï¿½ Remaining Tools (8) | 8ï¿½10 hours | Follows same pattern established in Phase 3 |
+| Phase 5 ï¿½ Auth & Security | 3ï¿½4 hours | Straightforward with the pattern in Section 8 |
+| Phase 6 ï¿½ Deploy & Connect | 2ï¿½4 hours | Vercel deploy + team onboarding |
+| Buffer / Testing / Debugging | 8ï¿½10 hours | Always budget for unexpected API quirks |
+| **Total** | **41ï¿½58 hours** | **~1ï¿½1.5 weeks for a single focused developer** |
 
-> A competent developer can have a working local prototype (all 15 tools) in 3–4 days, and the production Vercel deployment ready within 2 weeks including testing.
+> A competent developer can have a working local prototype (all 15 tools) in 3ï¿½4 days, and the production Vercel deployment ready within 2 weeks including testing.
 
 ---
 
@@ -825,7 +825,7 @@ Before deploying to production:
       "headers": {
         "x-api-key": "mcp_yourcompanykey_abc123"
       },
-      "description": "Company JobTread data — jobs, budgets, documents, time, contacts"
+      "description": "Company JobTread data ï¿½ jobs, budgets, documents, time, contacts"
     }
   }
 }
@@ -837,4 +837,4 @@ Before deploying to production:
 
 ---
 
-*End of Specification — JobTread MCP Server v1.0*
+*End of Specification ï¿½ JobTread MCP Server v1.0*
