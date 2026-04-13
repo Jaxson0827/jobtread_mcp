@@ -22,17 +22,58 @@ assertEnvVars();
 // ---------------------------------------------------------------------------
 // MCP server factory — fresh instance per request (stateless Vercel model)
 // ---------------------------------------------------------------------------
+
+// Expected tool names in registration order — used for startup audit.
+const EXPECTED_TOOLS = [
+  // jobs (4)
+  'search_jobs', 'get_job', 'create_job', 'update_job_status',
+  // budgets (3)
+  'get_budget', 'add_budget_item', 'get_budget_summary',
+  // documents (2)
+  'list_documents', 'create_document',
+  // time (4)
+  'log_time', 'get_time_entries', 'create_daily_log', 'get_daily_logs',
+  // accounts (3)
+  'search_accounts', 'get_account', 'create_account',
+] as const;
+
 function buildMcpServer(): McpServer {
   const server = new McpServer({
     name: 'jobtread-mcp',
     version: '1.0.0',
   });
 
-  registerJobTools(server);
-  registerBudgetTools(server);
-  registerDocumentTools(server);
-  registerTimeTools(server);
-  registerAccountTools(server);
+  // Each group is isolated so a failure in one cannot prevent others from loading.
+  const groups: Array<[string, () => void]> = [
+    ['jobs', () => registerJobTools(server)],
+    ['budgets', () => registerBudgetTools(server)],
+    ['documents', () => registerDocumentTools(server)],
+    ['time', () => registerTimeTools(server)],
+    ['accounts', () => registerAccountTools(server)],
+  ];
+
+  for (const [name, register] of groups) {
+    try {
+      register();
+    } catch (e) {
+      console.error(`[jobtread-mcp] FATAL: failed to register ${name} tools:`, e);
+    }
+  }
+
+  // Startup audit — logs every registered tool name so Vercel logs show the
+  // exact state on each cold start. Warns loudly if the count is wrong.
+  const registered = Object.keys(
+    (server as unknown as Record<string, Record<string, unknown>>)['_registeredTools'] ?? {}
+  );
+  const missing = EXPECTED_TOOLS.filter((t) => !registered.includes(t));
+
+  if (missing.length > 0) {
+    console.error(
+      `[jobtread-mcp] WARNING: ${missing.length} tool(s) failed to register: ${missing.join(', ')}`
+    );
+  } else {
+    console.log(`[jobtread-mcp] All ${registered.length} tools registered: ${registered.join(', ')}`);
+  }
 
   return server;
 }
