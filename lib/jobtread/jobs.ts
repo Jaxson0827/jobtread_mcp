@@ -20,6 +20,11 @@ const JOB_FIELDS = {
   },
 };
 
+// The Pave API accepts `size` (max 100) but has no cursor/offset pagination.
+// We fetch the maximum in one call. Accounts with >100 jobs will be truncated
+// at the API level — this is the best available without a server-side workaround.
+const JOBS_PAGE_SIZE = 100;
+
 export async function searchJobs(query?: string): Promise<Partial<Job>[]> {
   const orgId = process.env.JOBTREAD_ORG_ID;
   if (!orgId) throw new Error('JOBTREAD_ORG_ID is not set');
@@ -28,6 +33,7 @@ export async function searchJobs(query?: string): Promise<Partial<Job>[]> {
     organization: {
       $: { id: orgId },
       jobs: {
+        $: { size: JOBS_PAGE_SIZE },
         nodes: JOB_FIELDS,
       },
     },

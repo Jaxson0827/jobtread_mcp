@@ -9,7 +9,7 @@ export function registerJobTools(server: McpServer): void {
     'search_jobs',
     {
       description:
-        'Search and list jobs in JobTread. Filter by text (matches name, number, description) and/or status. Returns all jobs when no filters given. Use this to discover job IDs before calling get_job.',
+        'Search and list jobs in JobTread. Filter by text (matches name, number, description) and/or status. Returns all matching jobs (up to 100, which is the JobTread API maximum per request). Use this to discover job IDs before calling get_job.',
       inputSchema: {
         query: z
           .string()
@@ -19,20 +19,12 @@ export function registerJobTools(server: McpServer): void {
           .enum(['created', 'approved', 'closed', 'paid'])
           .optional()
           .describe('Filter by job status: created, approved, closed, or paid'),
-        limit: z
-          .number()
-          .int()
-          .min(1)
-          .max(100)
-          .optional()
-          .describe('Max results to return (default 20, max 100)'),
       },
     },
-    async ({ query, status, limit = 20 }) => {
+    async ({ query, status }) => {
       try {
         let jobs = await searchJobs(query);
         if (status) jobs = jobs.filter((j) => j.status === status);
-        jobs = jobs.slice(0, limit);
         return ok({
           total: jobs.length,
           jobs: jobs.map((j) => ({
