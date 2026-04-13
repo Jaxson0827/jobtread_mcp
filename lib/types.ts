@@ -50,6 +50,11 @@ export interface CostType {
   name: string;
 }
 
+export interface Unit {
+  id: string;
+  name: string;
+}
+
 export interface CostItem {
   id: string;
   name: string;
@@ -59,8 +64,20 @@ export interface CostItem {
   unitPrice: number | null;
   cost: number;
   price: number;
+  createdAt?: string;
   costCode?: Partial<CostCode>;
   costType?: Partial<CostType>;
+  unit?: Partial<Unit>;
+}
+
+export interface JobFile {
+  id: string;
+  name: string;
+  url: string | null;
+  type: string | null;
+  size: number | null;
+  description: string | null;
+  createdAt: string;
 }
 
 export interface User {

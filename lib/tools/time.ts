@@ -6,6 +6,8 @@ import {
   getDailyLogs,
   createDailyLog,
   formatMinutes,
+  getTimeEntryById,
+  getOrgTimeEntries,
 } from '../jobtread/time.js';
 import { getJobCostItems } from '../jobtread/budgets.js';
 import { ok, err } from './_helpers.js';
@@ -162,6 +164,150 @@ export function registerTimeTools(server: McpServer): void {
         });
       } catch (e) {
         return err(`Failed to create daily log: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // ── get_time_summary ───────────────────────────────────────────────────────
+  server.registerTool(
+    'get_time_summary',
+    {
+      description:
+        'Get aggregated time totals grouped by job and by user. ' +
+        'Optionally filter by job ID, user ID, and/or date range. ' +
+        'Returns total hours, a per-job breakdown, and a per-user breakdown. ' +
+        'NOTE: The JobTread API does not support server-side filtering on time entries — ' +
+        'all filtering is done client-side after fetching. ' +
+        'For a single job\'s raw entries use get_time_entries instead.',
+      inputSchema: {
+        job_id: z
+          .string()
+          .optional()
+          .describe('Filter to a specific job. If omitted, all org time entries are included.'),
+        user_id: z
+          .string()
+          .optional()
+          .describe('Filter to a specific user ID (use list_users to find user IDs).'),
+        start_date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional()
+          .describe('Include entries on or after this date (YYYY-MM-DD).'),
+        end_date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional()
+          .describe('Include entries on or before this date (YYYY-MM-DD).'),
+      },
+    },
+    async ({ job_id, user_id, start_date, end_date }) => {
+      try {
+        // Fetch source: single job or all org entries
+        let entries = job_id
+          ? (await getTimeEntries(job_id)).map((e) => ({ ...e, job: { id: job_id, name: '' } }))
+          : await getOrgTimeEntries();
+
+        // Client-side filters
+        if (user_id) entries = entries.filter((e) => e.user?.id === user_id);
+        if (start_date) {
+          const start = new Date(`${start_date}T00:00:00Z`).getTime();
+          entries = entries.filter((e) => e.startedAt && new Date(e.startedAt).getTime() >= start);
+        }
+        if (end_date) {
+          const end = new Date(`${end_date}T23:59:59Z`).getTime();
+          entries = entries.filter((e) => e.startedAt && new Date(e.startedAt).getTime() <= end);
+        }
+
+        const totalMinutes = entries.reduce((s, e) => s + (e.minutes ?? 0), 0);
+
+        // Group by job
+        const byJob = new Map<string, { jobId: string; jobName: string; minutes: number; entryCount: number }>();
+        for (const e of entries) {
+          const jobId = e.job?.id ?? '(no job)';
+          const jobName = e.job?.name ?? '(no job)';
+          const existing = byJob.get(jobId) ?? { jobId, jobName, minutes: 0, entryCount: 0 };
+          existing.minutes += e.minutes ?? 0;
+          existing.entryCount += 1;
+          byJob.set(jobId, existing);
+        }
+
+        // Group by user
+        const byUser = new Map<string, { userId: string; userName: string; minutes: number; entryCount: number }>();
+        for (const e of entries) {
+          const userId = e.user?.id ?? '(unknown)';
+          const userName = e.user?.name ?? '(unknown)';
+          const existing = byUser.get(userId) ?? { userId, userName, minutes: 0, entryCount: 0 };
+          existing.minutes += e.minutes ?? 0;
+          existing.entryCount += 1;
+          byUser.set(userId, existing);
+        }
+
+        const jobSummaries = [...byJob.values()]
+          .sort((a, b) => b.minutes - a.minutes)
+          .map((j) => ({
+            jobId: j.jobId,
+            jobName: j.jobName,
+            hours: +(j.minutes / 60).toFixed(2),
+            formatted: formatMinutes(j.minutes),
+            entryCount: j.entryCount,
+          }));
+
+        const userSummaries = [...byUser.values()]
+          .sort((a, b) => b.minutes - a.minutes)
+          .map((u) => ({
+            userId: u.userId,
+            userName: u.userName,
+            hours: +(u.minutes / 60).toFixed(2),
+            formatted: formatMinutes(u.minutes),
+            entryCount: u.entryCount,
+          }));
+
+        return ok({
+          filters: { job_id: job_id ?? null, user_id: user_id ?? null, start_date: start_date ?? null, end_date: end_date ?? null },
+          entryCount: entries.length,
+          totalMinutes,
+          totalHours: +(totalMinutes / 60).toFixed(2),
+          totalFormatted: formatMinutes(totalMinutes),
+          byJob: jobSummaries,
+          byUser: userSummaries,
+        });
+      } catch (e) {
+        return err(`Failed to get time summary: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // ── get_time_entry_details ─────────────────────────────────────────────────
+  server.registerTool(
+    'get_time_entry_details',
+    {
+      description:
+        'Get full details for a single time entry by its ID, including the worker, ' +
+        'the job it was logged against, start/end times, duration, and notes. ' +
+        'Use get_time_entries to list entries for a job and find an entry ID.',
+      inputSchema: {
+        time_entry_id: z.string().describe('The JobTread time entry ID'),
+      },
+    },
+    async ({ time_entry_id }) => {
+      try {
+        const entry = await getTimeEntryById(time_entry_id);
+        if (!entry.id) return err(`Time entry not found: ${time_entry_id}`);
+        const minutes = entry.minutes ?? 0;
+        return ok({
+          id: entry.id,
+          startedAt: entry.startedAt,
+          endedAt: entry.endedAt,
+          minutes,
+          hours: +(minutes / 60).toFixed(2),
+          formatted: formatMinutes(minutes),
+          notes: entry.notes ?? null,
+          worker: entry.user ? { id: entry.user.id, name: entry.user.name } : null,
+          job: entry.job ? { id: entry.job.id, name: entry.job.name } : null,
+          createdAt: entry.createdAt,
+        });
+      } catch (e) {
+        return err(`Failed to get time entry details: ${(e as Error).message}`);
       }
     }
   );

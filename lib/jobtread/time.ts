@@ -126,3 +126,48 @@ export function formatMinutes(minutes: number): string {
   const m = minutes % 60;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
+
+/**
+ * Fetch a single time entry by its ID.
+ * Returns the entry with user and job relations.
+ */
+export async function getTimeEntryById(
+  timeEntryId: string
+): Promise<Partial<TimeEntry> & { job?: { id: string; name: string } | null }> {
+  const data = await paveQuery({
+    timeEntry: {
+      $: { id: timeEntryId },
+      ...TIME_ENTRY_FIELDS,
+      job: { id: {}, name: {} },
+    },
+  });
+  return data?.timeEntry ?? {};
+}
+
+export interface OrgTimeEntry extends Partial<TimeEntry> {
+  job?: { id: string; name: string } | null;
+}
+
+/**
+ * Fetch all time entries across the entire organization (up to 500).
+ * NOTE: org.timeEntries does not accept filter params (jobId, userId, dates) —
+ * all filtering must happen client-side.
+ */
+export async function getOrgTimeEntries(): Promise<OrgTimeEntry[]> {
+  const orgId = process.env.JOBTREAD_ORG_ID;
+  if (!orgId) throw new Error('JOBTREAD_ORG_ID is not set');
+
+  const data = await paveQuery({
+    organization: {
+      $: { id: orgId },
+      timeEntries: {
+        $: { size: 100 },
+        nodes: {
+          ...TIME_ENTRY_FIELDS,
+          job: { id: {}, name: {} },
+        },
+      },
+    },
+  });
+  return data?.organization?.timeEntries?.nodes ?? [];
+}

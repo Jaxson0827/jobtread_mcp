@@ -28,14 +28,17 @@ assertEnvVars();
 
 // Expected tool names in registration order — used for startup audit.
 const EXPECTED_TOOLS = [
-  // jobs (4)
+  // jobs (6)
   'search_jobs', 'get_job', 'create_job', 'update_job_status',
-  // budgets (4)
+  'get_active_jobs', 'get_job_folders',
+  // budgets (7)
   'get_budget', 'add_budget_item', 'get_budget_summary', 'copy_budget',
+  'get_cost_codes', 'get_cost_item_details', 'get_units',
   // documents (2)
   'list_documents', 'create_document',
-  // time (4)
+  // time (6)
   'log_time', 'get_time_entries', 'create_daily_log', 'get_daily_logs',
+  'get_time_summary', 'get_time_entry_details',
   // accounts (7)
   'search_accounts', 'get_account', 'create_account', 'list_users',
   'get_contacts', 'get_contact_details', 'create_contact',
@@ -85,7 +88,7 @@ function buildMcpServer(): McpServer {
       `[jobtread-mcp] WARNING: ${missing.length} tool(s) failed to register: ${missing.join(', ')}`
     );
   } else {
-    console.log(`[jobtread-mcp] All ${registered.length}/30 tools registered: ${registered.join(', ')}`);
+    console.log(`[jobtread-mcp] All ${registered.length}/37 tools registered: ${registered.join(', ')}`);
   }
 
   return server;

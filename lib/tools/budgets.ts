@@ -7,6 +7,8 @@ import {
   deleteCostItem,
   getCostTypes,
   getCostCodes,
+  getCostItemById,
+  getUnits,
 } from '../jobtread/budgets.js';
 import { ok, err } from './_helpers.js';
 
@@ -220,6 +222,94 @@ export function registerBudgetTools(server: McpServer): void {
         });
       } catch (e) {
         return err(`Failed to get budget summary: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // ── get_cost_codes ─────────────────────────────────────────────────────────
+  server.registerTool(
+    'get_cost_codes',
+    {
+      description:
+        'List all cost codes and cost types available in the organization. ' +
+        'Cost codes categorize budget line items by trade or work type (e.g. Structural Steel, Railings). ' +
+        'Cost types are higher-level categories (e.g. Labor, Materials, Subcontractor, Equipment). ' +
+        'Use these values with add_budget_item to categorize budget line items correctly.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const [codes, types] = await Promise.all([getCostCodes(), getCostTypes()]);
+        return ok({
+          costTypes: types.map((t) => ({ id: t.id, name: t.name })),
+          costCodes: codes.map((c) => ({ id: c.id, name: c.name })),
+          total: { costTypes: types.length, costCodes: codes.length },
+          hint: 'Pass a cost type or cost code name to add_budget_item via the cost_code field.',
+        });
+      } catch (e) {
+        return err(`Failed to get cost codes: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // ── get_cost_item_details ──────────────────────────────────────────────────
+  server.registerTool(
+    'get_cost_item_details',
+    {
+      description:
+        'Get full details for a single budget line item by its ID, including quantity, unit cost, ' +
+        'unit price, total cost, total price, cost code, cost type, unit of measure, and creation date. ' +
+        'Use get_budget to list all cost items for a job and find item IDs.',
+      inputSchema: {
+        cost_item_id: z.string().describe('The JobTread cost item ID'),
+      },
+    },
+    async ({ cost_item_id }) => {
+      try {
+        const item = await getCostItemById(cost_item_id);
+        if (!item.id) return err(`Cost item not found: ${cost_item_id}`);
+        return ok({
+          id: item.id,
+          name: item.name,
+          description: item.description ?? null,
+          quantity: item.quantity ?? null,
+          unitCost: item.unitCost ?? null,
+          unitPrice: item.unitPrice ?? null,
+          totalCost: item.cost ?? null,
+          totalPrice: item.price ?? null,
+          costCode: item.costCode?.name ?? null,
+          costCodeId: item.costCode?.id ?? null,
+          costType: item.costType?.name ?? null,
+          costTypeId: item.costType?.id ?? null,
+          unit: item.unit?.name ?? null,
+          unitId: item.unit?.id ?? null,
+          createdAt: item.createdAt ?? null,
+        });
+      } catch (e) {
+        return err(`Failed to get cost item details: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // ── get_units ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    'get_units',
+    {
+      description:
+        'List all units of measure available in the organization (e.g. Hours, Square Feet, Linear Feet, Each, Days, Lump Sum). ' +
+        'Use these when creating or reviewing budget line items. ' +
+        'Units are attached to cost items — each cost item can have one unit.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const units = await getUnits();
+        return ok({
+          total: units.length,
+          units: units.map((u) => ({ id: u.id, name: u.name })),
+        });
+      } catch (e) {
+        return err(`Failed to get units: ${(e as Error).message}`);
       }
     }
   );

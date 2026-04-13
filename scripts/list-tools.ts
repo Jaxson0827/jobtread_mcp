@@ -17,6 +17,7 @@ import { registerAccountTools } from '../lib/tools/accounts.js';
 import { registerTaskTools } from '../lib/tools/tasks.js';
 import { registerCommentTools } from '../lib/tools/comments.js';
 import { registerLocationTools } from '../lib/tools/locations.js';
+// jobs, budgets, time modules already have the new tools registered inline
 // accounts module already has get_contacts, get_contact_details, create_contact
 
 function buildMcpServer(): McpServer {

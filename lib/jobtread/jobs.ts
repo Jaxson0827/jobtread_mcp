@@ -1,5 +1,5 @@
 import { paveQuery } from './client.js';
-import type { Job } from '../types.js';
+import type { Job, JobFile } from '../types.js';
 
 const JOB_FIELDS = {
   id: {},
@@ -122,4 +122,47 @@ export async function updateJob(input: UpdateJobInput): Promise<Partial<Job>> {
 export async function getJobsByStatus(status: string): Promise<Partial<Job>[]> {
   const all = await searchJobs();
   return all.filter((j) => j.status === status);
+}
+
+/**
+ * Return all active jobs — those with status 'created' or 'approved'.
+ * Sorted newest createdAt first as a convenience for Claude.
+ */
+export async function getActiveJobs(): Promise<Partial<Job>[]> {
+  const all = await searchJobs();
+  return all
+    .filter((j) => j.status === 'created' || j.status === 'approved')
+    .sort((a, b) => {
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return tb - ta;
+    });
+}
+
+/**
+ * Return files attached to a job (images, PDFs, etc.).
+ *
+ * NOTE: `job.folders` exists in the Pave API but always returns an empty scalar
+ * array with no queryable sub-fields — there is no folder structure accessible
+ * via the API. Files are returned directly via `job.files`.
+ */
+export async function getJobFiles(jobId: string): Promise<Partial<JobFile>[]> {
+  const data = await paveQuery({
+    job: {
+      $: { id: jobId },
+      files: {
+        $: { size: 100 },
+        nodes: {
+          id: {},
+          name: {},
+          url: {},
+          type: {},
+          size: {},
+          description: {},
+          createdAt: {},
+        },
+      },
+    },
+  });
+  return data?.job?.files?.nodes ?? [];
 }

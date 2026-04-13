@@ -1,5 +1,5 @@
 import { paveQuery } from './client.js';
-import type { CostItem, CostCode, CostType } from '../types.js';
+import type { CostItem, CostCode, CostType, Unit } from '../types.js';
 
 const COST_ITEM_FIELDS = {
   id: {},
@@ -10,11 +10,16 @@ const COST_ITEM_FIELDS = {
   unitPrice: {},
   cost: {},
   price: {},
+  createdAt: {},
   costCode: {
     id: {},
     name: {},
   },
   costType: {
+    id: {},
+    name: {},
+  },
+  unit: {
     id: {},
     name: {},
   },
@@ -134,4 +139,38 @@ export async function getJobCostSummary(jobId: string): Promise<CostSummary> {
     itemCount: items.length,
     items,
   };
+}
+
+/**
+ * Fetch a single cost item by its ID.
+ */
+export async function getCostItemById(costItemId: string): Promise<Partial<CostItem>> {
+  const data = await paveQuery({
+    costItem: {
+      $: { id: costItemId },
+      ...COST_ITEM_FIELDS,
+    },
+  });
+  return data?.costItem ?? {};
+}
+
+/**
+ * Return all units of measure available in the organization.
+ * Units: Cubic Yards, Days, Each, Gallons, Hours, Linear Feet,
+ *        Lump Sum, Pounds, Square Feet, EA (and any org-custom ones).
+ */
+export async function getUnits(): Promise<Partial<Unit>[]> {
+  const orgId = process.env.JOBTREAD_ORG_ID;
+  if (!orgId) throw new Error('JOBTREAD_ORG_ID is not set');
+
+  const data = await paveQuery({
+    organization: {
+      $: { id: orgId },
+      units: {
+        $: { size: 100 },
+        nodes: { id: {}, name: {} },
+      },
+    },
+  });
+  return data?.organization?.units?.nodes ?? [];
 }

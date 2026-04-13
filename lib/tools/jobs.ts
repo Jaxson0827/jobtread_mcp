@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { searchJobs, getJob, createJob, updateJob } from '../jobtread/jobs.js';
+import { searchJobs, getJob, createJob, updateJob, getActiveJobs, getJobFiles } from '../jobtread/jobs.js';
 import { createLocation } from '../jobtread/accounts.js';
 import { ok, err } from './_helpers.js';
 
@@ -114,6 +114,74 @@ export function registerJobTools(server: McpServer): void {
         });
       } catch (e) {
         return err(`Failed to create job: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // ── get_active_jobs ────────────────────────────────────────────────────────
+  server.registerTool(
+    'get_active_jobs',
+    {
+      description:
+        'Return all jobs with status "created" or "approved", sorted newest first. ' +
+        'Fast shortcut so you don\'t need to call search_jobs and filter manually. ' +
+        'Use this at the start of a conversation to see what work is currently in progress.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const jobs = await getActiveJobs();
+        return ok({
+          total: jobs.length,
+          jobs: jobs.map((j) => ({
+            id: j.id,
+            name: j.name,
+            number: j.number,
+            status: j.status,
+            description: j.description ?? null,
+            createdAt: j.createdAt,
+            location: j.location?.formattedAddress ?? null,
+          })),
+        });
+      } catch (e) {
+        return err(`Failed to get active jobs: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // ── get_job_folders ────────────────────────────────────────────────────────
+  server.registerTool(
+    'get_job_folders',
+    {
+      description:
+        'Get the files attached to a job (photos, PDFs, documents, attachments). ' +
+        'Returns each file\'s name, download URL, type, and file size. ' +
+        'NOTE: The JobTread Pave API exposes "folders" as an empty scalar — there is no nested folder ' +
+        'structure accessible via the API. All attached files are returned as a flat list. ' +
+        'For contract/invoice documents use list_documents instead.',
+      inputSchema: {
+        job_id: z.string().describe('The JobTread job ID'),
+      },
+    },
+    async ({ job_id }) => {
+      try {
+        const files = await getJobFiles(job_id);
+        return ok({
+          job_id,
+          total: files.length,
+          note: 'JobTread folder structure is not accessible via API — files are returned as a flat list.',
+          files: files.map((f) => ({
+            id: f.id,
+            name: f.name,
+            url: f.url ?? null,
+            type: f.type ?? null,
+            sizeBytes: f.size ?? null,
+            description: f.description ?? null,
+            createdAt: f.createdAt,
+          })),
+        });
+      } catch (e) {
+        return err(`Failed to get job files: ${(e as Error).message}`);
       }
     }
   );
