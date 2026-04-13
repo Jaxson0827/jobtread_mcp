@@ -27,14 +27,14 @@ assertEnvVars();
 const EXPECTED_TOOLS = [
   // jobs (4)
   'search_jobs', 'get_job', 'create_job', 'update_job_status',
-  // budgets (3)
-  'get_budget', 'add_budget_item', 'get_budget_summary',
+  // budgets (4)
+  'get_budget', 'add_budget_item', 'get_budget_summary', 'copy_budget',
   // documents (2)
   'list_documents', 'create_document',
   // time (4)
   'log_time', 'get_time_entries', 'create_daily_log', 'get_daily_logs',
-  // accounts (3)
-  'search_accounts', 'get_account', 'create_account',
+  // accounts (4)
+  'search_accounts', 'get_account', 'create_account', 'list_users',
 ] as const;
 
 function buildMcpServer(): McpServer {
@@ -72,7 +72,7 @@ function buildMcpServer(): McpServer {
       `[jobtread-mcp] WARNING: ${missing.length} tool(s) failed to register: ${missing.join(', ')}`
     );
   } else {
-    console.log(`[jobtread-mcp] All ${registered.length} tools registered: ${registered.join(', ')}`);
+    console.log(`[jobtread-mcp] All ${registered.length}/18 tools registered: ${registered.join(', ')}`);
   }
 
   return server;

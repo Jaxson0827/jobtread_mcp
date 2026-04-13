@@ -2,7 +2,9 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   getJobCostSummary,
+  getJobCostItems,
   createCostItem,
+  deleteCostItem,
   getCostTypes,
   getCostCodes,
 } from '../jobtread/budgets.js';
@@ -218,6 +220,94 @@ export function registerBudgetTools(server: McpServer): void {
         });
       } catch (e) {
         return err(`Failed to get budget summary: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'copy_budget',
+    {
+      description:
+        'Copy all cost line items from one job to another. ' +
+        'Reads every cost item on the source job (name, quantity, unit cost, unit price, cost code, cost type) ' +
+        'and creates identical items on the destination job. ' +
+        'Optionally clears existing cost items on the destination first. ' +
+        'Returns a count of items copied, total cost replicated, and details of any items that failed.',
+      inputSchema: {
+        source_job_id: z.string().describe('Job ID to copy budget items FROM'),
+        destination_job_id: z.string().describe('Job ID to copy budget items TO'),
+        clear_existing: z
+          .boolean()
+          .optional()
+          .describe(
+            'If true, delete all existing cost items on the destination job before copying. Defaults to false.'
+          ),
+      },
+    },
+    async ({ source_job_id, destination_job_id, clear_existing = false }) => {
+      try {
+        // 1. Fetch source items (includes costCode.id and costType.id)
+        const sourceItems = await getJobCostItems(source_job_id);
+        if (sourceItems.length === 0) {
+          return ok({ copied: 0, failed: 0, totalCost: 0, message: 'Source job has no cost items.' });
+        }
+
+        // 2. Optionally clear destination
+        if (clear_existing) {
+          const destItems = await getJobCostItems(destination_job_id);
+          await Promise.all(destItems.map((i) => i.id ? deleteCostItem(i.id) : Promise.resolve()));
+        }
+
+        // 3. Copy each item
+        const succeeded: Array<{ name: string; totalCost: number }> = [];
+        const failed: Array<{ name: string; error: string }> = [];
+
+        for (const item of sourceItems) {
+          // Both costCodeId and costTypeId are required by createCostItem
+          const costCodeId = item.costCode?.id;
+          const costTypeId = item.costType?.id;
+
+          if (!costCodeId || !costTypeId) {
+            failed.push({
+              name: item.name ?? '(unnamed)',
+              error: `Missing costCodeId (${costCodeId ?? 'null'}) or costTypeId (${costTypeId ?? 'null'})`,
+            });
+            continue;
+          }
+
+          try {
+            const created = await createCostItem({
+              jobId: destination_job_id,
+              name: item.name ?? '(copied item)',
+              quantity: item.quantity ?? 1,
+              unitCost: item.unitCost ?? 0,
+              unitPrice: item.unitPrice ?? item.unitCost ?? 0,
+              costCodeId,
+              costTypeId,
+            });
+            succeeded.push({
+              name: created.name ?? item.name ?? '(unnamed)',
+              totalCost: created.cost ?? 0,
+            });
+          } catch (e) {
+            failed.push({ name: item.name ?? '(unnamed)', error: (e as Error).message });
+          }
+        }
+
+        const totalCost = succeeded.reduce((s, i) => s + i.totalCost, 0);
+
+        return ok({
+          source_job_id,
+          destination_job_id,
+          cleared_existing: clear_existing,
+          copied: succeeded.length,
+          failed: failed.length,
+          totalCostReplicated: totalCost,
+          ...(failed.length > 0 && { failedItems: failed }),
+          copiedItems: succeeded,
+        });
+      } catch (e) {
+        return err(`Failed to copy budget: ${(e as Error).message}`);
       }
     }
   );

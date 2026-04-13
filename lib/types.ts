@@ -47,6 +47,12 @@ export interface CostItem {
   cost: number;
   price: number;
   costCode?: Partial<CostCode>;
+  costType?: Partial<CostType>;
+}
+
+export interface User {
+  id: string;
+  name: string;
 }
 
 export interface TimeEntry {

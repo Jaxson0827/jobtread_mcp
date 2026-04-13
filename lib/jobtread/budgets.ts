@@ -14,6 +14,10 @@ const COST_ITEM_FIELDS = {
     id: {},
     name: {},
   },
+  costType: {
+    id: {},
+    name: {},
+  },
 };
 
 export async function getJobCostItems(jobId: string): Promise<Partial<CostItem>[]> {

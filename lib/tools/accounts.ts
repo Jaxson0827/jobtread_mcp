@@ -6,6 +6,7 @@ import {
   createAccount,
   createContact,
 } from '../jobtread/accounts.js';
+import { listUsers } from '../jobtread/users.js';
 import { ok, err } from './_helpers.js';
 
 export function registerAccountTools(server: McpServer): void {
@@ -146,6 +147,30 @@ export function registerAccountTools(server: McpServer): void {
         });
       } catch (e) {
         return err(`Failed to create account: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'list_users',
+    {
+      description:
+        'List all users in the JobTread organization. ' +
+        'Returns every user ID and name — including both human team members and integration accounts ' +
+        '(e.g. QuickBooks, CompanyCam). Use this to resolve a person\'s name to their user ID before ' +
+        'logging time on their behalf. ' +
+        'NOTE: The JobTread API only exposes id and name for users — email is not available via this API.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const users = await listUsers();
+        return ok({
+          total: users.length,
+          users: users.map((u) => ({ id: u.id, name: u.name })),
+        });
+      } catch (e) {
+        return err(`Failed to list users: ${(e as Error).message}`);
       }
     }
   );
